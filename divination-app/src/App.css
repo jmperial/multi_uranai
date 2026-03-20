@@ -1,0 +1,317 @@
+/* ===== Reset & Base ===== */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ===== App Layout ===== */
+.app {
+  min-height: 100svh;
+  position: relative;
+  overflow-x: hidden;
+  font-family: 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', 'Yu Gothic UI', 'Meiryo', system-ui, sans-serif;
+}
+
+/* ===== Background Orbs ===== */
+.bg-orbs {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.orb {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: 0.35;
+  animation: float 12s ease-in-out infinite;
+}
+
+.orb1 {
+  width: 400px;
+  height: 400px;
+  background: radial-gradient(circle, #7c3aed, #4f46e5);
+  top: -100px;
+  left: -100px;
+  animation-delay: 0s;
+}
+
+.orb2 {
+  width: 350px;
+  height: 350px;
+  background: radial-gradient(circle, #0ea5e9, #6366f1);
+  top: 30%;
+  right: -80px;
+  animation-delay: -4s;
+}
+
+.orb3 {
+  width: 300px;
+  height: 300px;
+  background: radial-gradient(circle, #ec4899, #8b5cf6);
+  bottom: 20%;
+  left: 10%;
+  animation-delay: -8s;
+}
+
+.orb4 {
+  width: 250px;
+  height: 250px;
+  background: radial-gradient(circle, #06b6d4, #3b82f6);
+  bottom: -50px;
+  right: 20%;
+  animation-delay: -2s;
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0) scale(1); }
+  33% { transform: translateY(-30px) scale(1.05); }
+  66% { transform: translateY(20px) scale(0.95); }
+}
+
+/* ===== Glassmorphism base ===== */
+.glass {
+  background: rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* ===== Header ===== */
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  padding: 16px 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.header-inner {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.title {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.title-ja {
+  font-size: clamp(28px, 7vw, 42px);
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  background: linear-gradient(135deg, #e0c3fc 0%, #8ec5fc 50%, #f8b4d9 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1.2;
+}
+
+.title-en {
+  font-size: clamp(9px, 2.5vw, 12px);
+  letter-spacing: 0.3em;
+  color: rgba(255, 255, 255, 0.5);
+  font-weight: 300;
+}
+
+.star-decoration {
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.4);
+  letter-spacing: 0.3em;
+}
+
+/* ===== Main ===== */
+.main {
+  position: relative;
+  z-index: 1;
+  padding: 24px 16px 40px;
+  max-width: 500px;
+  margin: 0 auto;
+  width: 100%;
+}
+
+/* ===== Welcome ===== */
+.welcome {
+  margin-top: 40px;
+  border-radius: 24px;
+  padding: 48px 32px;
+  text-align: center;
+}
+
+.welcome-icon {
+  font-size: 56px;
+  margin-bottom: 16px;
+  display: block;
+  animation: pulse-moon 3s ease-in-out infinite;
+}
+
+@keyframes pulse-moon {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.1) rotate(5deg); }
+}
+
+.welcome-text {
+  font-size: 17px;
+  color: rgba(255, 255, 255, 0.75);
+  line-height: 1.8;
+  letter-spacing: 0.05em;
+}
+
+.welcome-stars {
+  margin-top: 20px;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.35);
+  letter-spacing: 0.4em;
+}
+
+/* ===== Results ===== */
+.results-header {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.results-date {
+  display: inline-block;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.6);
+  letter-spacing: 0.08em;
+  padding: 6px 16px;
+  border-radius: 20px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.cards-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* ===== Card Base ===== */
+.card {
+  border-radius: 20px;
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(255,255,255,0.12) 0%, rgba(255,255,255,0.02) 100%);
+  pointer-events: none;
+}
+
+.card:active {
+  transform: scale(0.98);
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.card-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.card-title-block {
+  flex: 1;
+}
+
+.card-category {
+  font-size: 10px;
+  letter-spacing: 0.25em;
+  color: rgba(255, 255, 255, 0.45);
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.card-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.05em;
+}
+
+.card-subtitle {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.55);
+  margin-top: 2px;
+}
+
+.card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.card-trait {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
+  line-height: 1.7;
+  letter-spacing: 0.03em;
+}
+
+.card-divider {
+  height: 1px;
+  background: rgba(255, 255, 255, 0.12);
+  margin: 4px 0;
+}
+
+/* ===== Tag Pills ===== */
+.tag-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 500;
+  background: rgba(255, 255, 255, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: rgba(255, 255, 255, 0.85);
+  letter-spacing: 0.05em;
+}
+
+.tag.accent {
+  background: rgba(124, 58, 237, 0.3);
+  border-color: rgba(167, 139, 250, 0.4);
+  color: #c4b5fd;
+}
+
+/* ===== Footer ===== */
+.footer {
+  position: relative;
+  z-index: 1;
+  text-align: center;
+  padding: 20px;
+  font-size: 11px;
+  color: rgba(255, 255, 255, 0.25);
+  letter-spacing: 0.05em;
+}

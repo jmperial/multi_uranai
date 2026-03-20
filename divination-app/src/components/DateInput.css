@@ -1,0 +1,215 @@
+.date-input {
+  border-radius: 24px;
+  padding: 24px 20px;
+  margin-bottom: 24px;
+}
+
+.di-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 20px;
+}
+
+.di-label {
+  font-size: 13px;
+  letter-spacing: 0.2em;
+  color: rgba(255, 255, 255, 0.5);
+  text-transform: uppercase;
+}
+
+/* Mode toggle */
+.mode-toggle {
+  display: flex;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  padding: 3px;
+}
+
+.mode-btn {
+  border: none;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 11px;
+  padding: 5px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-family: inherit;
+  letter-spacing: 0.03em;
+  white-space: nowrap;
+}
+
+.mode-btn.active {
+  background: rgba(139, 92, 246, 0.4);
+  color: #e9d5ff;
+  box-shadow: 0 2px 8px rgba(139, 92, 246, 0.3);
+}
+
+/* Sliders */
+.sliders {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.slider-row {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.slider-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.slider-label {
+  font-size: 12px;
+  color: rgba(255, 255, 255, 0.45);
+  letter-spacing: 0.1em;
+}
+
+.slider-value {
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+  letter-spacing: 0.05em;
+}
+
+.slider-track-wrap {
+  position: relative;
+}
+
+/* Custom range slider */
+.slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  outline: none;
+  cursor: pointer;
+  background: linear-gradient(
+    to right,
+    rgba(139, 92, 246, 0.9) 0%,
+    rgba(167, 139, 250, 0.9) var(--pct, 50%),
+    rgba(255, 255, 255, 0.12) var(--pct, 50%),
+    rgba(255, 255, 255, 0.12) 100%
+  );
+}
+
+.slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #c4b5fd, #8b5cf6);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 2px 12px rgba(139, 92, 246, 0.6);
+  cursor: pointer;
+  transition: transform 0.15s ease;
+}
+
+.slider::-webkit-slider-thumb:active {
+  transform: scale(1.3);
+}
+
+.slider::-moz-range-thumb {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #c4b5fd, #8b5cf6);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  box-shadow: 0 2px 12px rgba(139, 92, 246, 0.6);
+  cursor: pointer;
+}
+
+/* Text date input */
+.text-input-row {
+  margin-bottom: 16px;
+}
+
+.date-picker {
+  width: 100%;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  color: #fff;
+  font-size: 18px;
+  font-family: inherit;
+  outline: none;
+  letter-spacing: 0.05em;
+  -webkit-appearance: none;
+  color-scheme: dark;
+}
+
+.date-picker:focus {
+  border-color: rgba(139, 92, 246, 0.6);
+  box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+}
+
+/* Preview */
+.di-preview {
+  text-align: center;
+  margin-bottom: 20px;
+}
+
+.di-date-display {
+  font-size: 22px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0.08em;
+  background: linear-gradient(135deg, #e0c3fc, #8ec5fc);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Divine button */
+.divine-btn {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #7c3aed, #4f46e5, #0ea5e9);
+  background-size: 200% 200%;
+  animation: gradient-shift 4s ease infinite;
+  color: #fff;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  box-shadow: 0 4px 20px rgba(124, 58, 237, 0.5);
+  font-family: inherit;
+}
+
+.divine-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 30px rgba(124, 58, 237, 0.6);
+}
+
+.divine-btn:active {
+  transform: scale(0.97);
+}
+
+.divine-btn-icon {
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+@keyframes gradient-shift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
