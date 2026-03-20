@@ -180,13 +180,14 @@ export function getSixStar(year, month, day) {
 }
 
 function calculateBirthNumber(year, month, day) {
-  // Sum all digits until single digit or specific values
+  // Sum all digits until single digit
   const digits = String(year) + String(month).padStart(2, '0') + String(day).padStart(2, '0');
   let sum = digits.split('').reduce((acc, d) => acc + parseInt(d), 0);
-  while (sum > 6) {
+  while (sum > 9) {
     sum = String(sum).split('').reduce((acc, d) => acc + parseInt(d), 0);
   }
-  return sum || 6;
+  // Map 1-9 to 1-6 range for six-star calculation
+  return ((sum - 1) % 6) + 1;
 }
 
 // ===== 九星気学 (Nine Star Ki) =====
