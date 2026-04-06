@@ -30,7 +30,8 @@ export function getZodiac(month, day) {
     '山羊座': { element: '土', ruling: '土星', trait: '野心的・責任感が強い・忍耐力' },
   };
 
-  let sign = dates[0];
+  // Default to 山羊座 (covers Dec 22 – Jan 19)
+  let sign = dates[11];
   for (const [m, d, name, eng, sym] of dates) {
     if (month > m || (month === m && day >= d)) {
       sign = [m, d, name, eng, sym];
@@ -55,35 +56,36 @@ const BRANCH_ANIMAL = { '子': '鼠', '丑': '牛', '寅': '虎', '卯': '兎', 
 
 function getStemBranch(offset) {
   return {
-    stem: TEN_STEMS[offset % 10],
-    branch: TWELVE_BRANCHES[offset % 12],
+    stem: TEN_STEMS[((offset % 10) + 10) % 10],
+    branch: TWELVE_BRANCHES[((offset % 12) + 12) % 12],
   };
 }
 
 export function getFourPillars(year, month, day) {
-  // Year pillar (年柱)
-  // 甲子 = 1984, so offset = (year - 4) % 60
-  const yearOffset = (year - 4 + 1000) % 60;
+  // Year pillar (年柱): 甲子 = 1984, offset = (year - 4) % 60
+  // Adjust: before 立春(2/4), use previous year
+  const yearAdj = (month === 1 || (month === 2 && day < 4)) ? year - 1 : year;
+  const yearOffset = (yearAdj - 4 + 1200) % 60;
   const yearPillar = getStemBranch(yearOffset);
 
   // Month pillar (月柱)
-  // Reference: Jiazi month (甲子月) calculation
-  // Month stem is based on year stem and lunar month
-  const lunarMonth = month; // simplified approximation
-  const monthStemBase = (yearOffset % 5) * 2;
-  const monthStem = TEN_STEMS[(monthStemBase + lunarMonth - 1) % 10];
-  const monthBranch = TWELVE_BRANCHES[(lunarMonth + 1) % 12];
+  // Branch: Jan=丑(1), Feb=寅(2), ..., Dec=子(0) → TWELVE_BRANCHES[month % 12]
+  // Stem base corrected: 甲/己年=丙(2), 乙/庚年=戊(4), 丙/辛年=庚(6), 丁/壬年=壬(8), 戊/癸年=甲(0)
+  const monthBranch = TWELVE_BRANCHES[month % 12];
+  const monthStemBase = ((yearOffset % 5) * 2 + 2) % 10;
+  // Chinese month 1 = February; convert: chineseMonth = ((month - 2) + 12) % 12 + 1
+  const chineseMonth = ((month - 2) + 12) % 12 + 1;
+  const monthStem = TEN_STEMS[(monthStemBase + chineseMonth - 1) % 10];
   const monthPillar = { stem: monthStem, branch: monthBranch };
 
-  // Day pillar (日柱)
-  // Days since a known Jiazi day (1900/1/31 = 甲戌日, offset 10)
-  const baseDate = new Date(1900, 0, 31);
+  // Day pillar (日柱): base 1900/1/1 = 甲子 (offset 0)
+  const baseDate = new Date(1900, 0, 1);
   const targetDate = new Date(year, month - 1, day);
   const dayDiff = Math.floor((targetDate - baseDate) / 86400000);
-  const dayOffset = (dayDiff + 10 + 6000) % 60;
+  const dayOffset = ((dayDiff % 60) + 60) % 60;
   const dayPillar = getStemBranch(dayOffset);
 
-  // Hour pillar (時柱) — use noon (午時) as default since no time given
+  // Hour pillar (時柱): noon (午時) default
   const hourStemBase = (dayOffset % 5) * 2;
   const hourPillar = {
     stem: TEN_STEMS[(hourStemBase + 4) % 10],
@@ -93,7 +95,6 @@ export function getFourPillars(year, month, day) {
   const pillars = [yearPillar, monthPillar, dayPillar, hourPillar];
   const labels = ['年柱', '月柱', '日柱', '時柱'];
 
-  // Count elements
   const elementCount = { 木: 0, 火: 0, 土: 0, 金: 0, 水: 0 };
   pillars.forEach(p => {
     elementCount[STEM_ELEMENT[p.stem]]++;
@@ -128,10 +129,21 @@ export function getFourPillars(year, month, day) {
 
 // ===== 六星占術 (Six Star Astrology by Kazuko Hosoki) =====
 export function getSixStar(year, month, day) {
-  // Calculate total sum of digits (simplified Hosoki method)
-  const birthNumber = calculateBirthNumber(year, month, day);
+  // Hosoki method: (year's last 2 digits) + month + day + 2, reduce to 1-12
+  // For Jan/Feb before Setsubun (2/4), use previous year
+  let adjustedYear = year;
+  if (month === 1 || (month === 2 && day < 4)) {
+    adjustedYear = year - 1;
+  }
 
-  const stars = [
+  const base = (adjustedYear % 100) + month + day + 2;
+  const birthNumber = ((base - 1) % 12) + 1;
+
+  // 1-6 = 陰(マイナス), 7-12 = 陽(プラス)
+  const starIndex = (birthNumber - 1) % 6; // 0=土, 1=金, 2=火, 3=天王, 4=木, 5=水
+  const isPositive = birthNumber >= 7;
+
+  const starDefs = [
     { name: '土星人', symbol: '⊕', color: '#8B7355', description: '忍耐力と実行力の持ち主。コツコツと努力を積み重ね、着実に夢を叶える' },
     { name: '金星人', symbol: '☽', color: '#DAA520', description: '美的感覚と社交性に優れ、人を惹きつけるカリスマ性がある' },
     { name: '火星人', symbol: '△', color: '#DC143C', description: '情熱的で行動力旺盛。直感力が鋭く、リーダーとして輝く' },
@@ -140,30 +152,26 @@ export function getSixStar(year, month, day) {
     { name: '水星人', symbol: '☿', color: '#20B2AA', description: '知性と機転が利く才人。コミュニケーション能力が高く多才' },
   ];
 
-  const starIndex = (birthNumber - 1 + 6) % 6;
-  const star = stars[starIndex];
+  const star = starDefs[starIndex];
 
-  // Positive/Negative cycle
-  const cycleYear = (year % 12);
-  const isPositive = cycleYear % 2 === 0;
-
-  // Annual fortune (12-year cycle based)
+  // Annual fortune: 12-year personal cycle based on current year
+  const currentYear = new Date().getFullYear();
   const fortunePhases = ['種', '芽吹き', '成長', '開花', '実り', '乱気', '停止', '減退', '整理', '陰影', '停止', '大殺界'];
-  const fortuneIndex = (year - (month <= 9 ? 1 : 0)) % 12;
-  const currentFortune = fortunePhases[Math.abs(fortuneIndex) % 12];
+  const cyclePos = ((currentYear - year) % 12 + 12) % 12;
+  const currentFortune = fortunePhases[cyclePos];
 
   const fortuneDescriptions = {
-    '種': '新しい始まりの年。種を蒔く時期で、基盤作りに最適',
-    '芽吹き': '物事が動き出す年。積極的な行動が実を結ぶ',
-    '成長': '着実に成長できる年。努力が確実に報われる',
-    '開花': '運気絶好調の年。全力で挑戦し花を咲かせよう',
-    '実り': '努力の成果が実る収穫の年。感謝と喜びに満ちる',
-    '乱気': '波乱含みの年。焦らず慎重に行動することが大切',
-    '停止': '立ち止まって見直す年。内省と準備の時期',
-    '減退': '後退を恐れず自然の流れに従う年',
-    '整理': '不要なものを手放し、本質を見極める年',
-    '陰影': '忍耐の年。静かに力を蓄え、次のチャンスを待つ',
-    '大殺界': '大きな変化の年。慎重に行動し、無謀な挑戦は避ける',
+    '種': '新しい始まりのサイクル。種を蒔く時期で、基盤作りに最適',
+    '芽吹き': '物事が動き出すサイクル。積極的な行動が実を結ぶ',
+    '成長': '着実に成長できるサイクル。努力が確実に報われる',
+    '開花': '運気絶好調のサイクル。全力で挑戦し花を咲かせよう',
+    '実り': '努力の成果が実る収穫のサイクル。感謝と喜びに満ちる',
+    '乱気': '波乱含みのサイクル。焦らず慎重に行動することが大切',
+    '停止': '立ち止まって見直すサイクル。内省と準備の時期',
+    '減退': '後退を恐れず自然の流れに従うサイクル',
+    '整理': '不要なものを手放し、本質を見極めるサイクル',
+    '陰影': '忍耐のサイクル。静かに力を蓄え、次のチャンスを待つ',
+    '大殺界': '大きな変化のサイクル。慎重に行動し、無謀な挑戦は避ける',
   };
 
   return {
@@ -172,29 +180,19 @@ export function getSixStar(year, month, day) {
     color: star.color,
     description: star.description,
     isPositive,
-    polarity: isPositive ? '陽' : '陰',
+    polarity: isPositive ? '陽(プラス)' : '陰(マイナス)',
     currentFortune,
     fortuneDescription: fortuneDescriptions[currentFortune] || '',
     birthNumber,
   };
 }
 
-function calculateBirthNumber(year, month, day) {
-  // Sum all digits until single digit or specific values
-  const digits = String(year) + String(month).padStart(2, '0') + String(day).padStart(2, '0');
-  let sum = digits.split('').reduce((acc, d) => acc + parseInt(d), 0);
-  while (sum > 6) {
-    sum = String(sum).split('').reduce((acc, d) => acc + parseInt(d), 0);
-  }
-  return sum || 6;
-}
-
 // ===== 九星気学 (Nine Star Ki) =====
 export function getNineStarKi(year, month, day) {
-  // Nine stars based on birth year (simplified)
-  // Reference year: 1 = 一白水星 for year ending in certain digit
-  const adjustedYear = month <= 1 ? year - 1 : year; // Before Feb = previous year
-  const starNum = (11 - ((adjustedYear - 1900) % 9)) % 9 || 9;
+  // Before Setsubun (Feb 4), use previous year
+  const adjustedYear = (month === 1 || (month === 2 && day < 4)) ? year - 1 : year;
+  // Correct formula: (12 - ((year - 1900) % 9)) % 9, 0 → 9
+  const starNum = (12 - ((adjustedYear - 1900) % 9)) % 9 || 9;
 
   const stars = [
     { num: 1, name: '一白水星', element: '水', color: '#1E90FF', trait: '知恵・柔軟性・コミュニケーション能力に優れる' },
@@ -224,7 +222,7 @@ export function getNumerology(year, month, day) {
   const digits = String(year) + String(month).padStart(2, '0') + String(day).padStart(2, '0');
   let sum = digits.split('').reduce((acc, d) => acc + parseInt(d), 0);
 
-  // Master numbers 11, 22, 33
+  // Preserve master numbers 11, 22, 33
   while (sum > 9 && sum !== 11 && sum !== 22 && sum !== 33) {
     sum = String(sum).split('').reduce((acc, d) => acc + parseInt(d), 0);
   }

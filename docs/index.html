@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>占いダッシュボード</title>
+<style>
+:root{--bg:#07091a;--card:rgba(255,255,255,.07);--border:rgba(255,255,255,.10);--text:#e8eaf6;--sub:rgba(255,255,255,.45);--cyan:#22d3ee;--green:#4ade80;--orange:#fb923c;--r:16px}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:-apple-system,'Hiragino Sans','Noto Sans JP',sans-serif;overflow-x:hidden}
+
+/* ── SCREENS ── */
+.screen{display:none;padding:0 0 60px}
+.screen.active{display:block}
+
+/* ── SETUP ── */
+#setup{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:24px}
+.setup-card{width:100%;max-width:360px;background:var(--card);border:1px solid var(--border);border-radius:24px;padding:32px;text-align:center}
+.setup-title{font-size:22px;font-weight:bold;margin-bottom:6px}
+.setup-sub{font-size:13px;color:var(--sub);margin-bottom:28px;line-height:1.6}
+.input-group{margin-bottom:20px;text-align:left}
+.input-group label{font-size:12px;color:var(--sub);margin-bottom:6px;display:block}
+.input-group input[type=date]{width:100%;padding:14px 16px;background:rgba(255,255,255,.08);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:16px;outline:none}
+.input-group input[type=date]:focus{border-color:var(--cyan)}
+.btn{width:100%;padding:16px;background:linear-gradient(135deg,#6366f1,#22d3ee);border:none;border-radius:14px;color:#fff;font-size:16px;font-weight:bold;cursor:pointer;transition:opacity .15s}
+.btn:active{opacity:.8}
+
+/* ── DASHBOARD ── */
+#dashboard{padding:0 14px 60px}
+.header{display:flex;align-items:center;justify-content:space-between;padding:16px 2px 10px}
+.header-left .title{font-size:17px;font-weight:bold}
+.header-left .date-lbl{font-size:11px;color:var(--sub);margin-top:2px}
+.icon-btn{background:none;border:none;color:var(--sub);font-size:20px;cursor:pointer;padding:6px}
+
+/* ── OVERALL CARD ── */
+.overall-card{background:var(--card);border:1px solid var(--border);border-radius:22px;padding:20px 16px 18px;margin-bottom:12px}
+.overall-top{display:flex;flex-direction:column;align-items:center;margin-bottom:6px}
+.overall-label-chip{font-size:11px;font-weight:bold;padding:4px 12px;border-radius:20px;margin-bottom:12px;letter-spacing:.04em}
+.overall-gauge-wrap{width:min(72vw,300px);position:relative}
+.overall-gauge-wrap svg{width:100%;height:auto;display:block}
+.pts-badge{text-align:center;margin-top:4px}
+.pts-badge .pts-num{font-size:clamp(28px,8vw,42px);font-weight:bold;line-height:1}
+.pts-badge .pts-denom{font-size:13px;color:var(--sub)}
+.pts-badge .pts-label{font-size:12px;color:var(--sub);margin-top:4px}
+.overall-msg{text-align:center;font-size:14px;line-height:1.6;color:rgba(255,255,255,.85);margin-top:8px;padding:0 8px}
+.divider{border:none;border-top:1px solid var(--border);margin:16px 0 14px}
+
+/* ── GRID ── */
+.fortune-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.fblock{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:8px 4px 6px;text-align:center;cursor:pointer;transition:transform .12s,border-color .12s;user-select:none}
+.fblock:active{transform:scale(.95)}
+.fblock .f-icon{font-size:17px;line-height:1;margin-bottom:3px}
+.fblock svg{width:100%;max-width:70px;height:auto;display:block;margin:0 auto 1px}
+.fblock .f-score{font-size:14px;font-weight:bold;line-height:1}
+.fblock .f-name{font-size:7.5px;color:var(--sub);margin-top:1px}
+
+/* ── BIO MINI ── */
+.bio-mini{background:var(--card);border:1px solid var(--border);border-radius:18px;padding:14px;margin-bottom:12px;cursor:pointer}
+.bio-mini-hdr{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px}
+.bio-mini-hdr .bio-title{font-size:13px;font-weight:bold}
+.bio-mini-hdr .bio-link{font-size:11px;color:var(--cyan)}
+.bio-legend{display:flex;gap:14px;margin-top:6px}
+.bio-legend span{font-size:10px;color:var(--sub)}
+
+/* ── LUCKY ── */
+.lucky-row{display:flex;gap:8px;margin-bottom:12px}
+.lucky-item{flex:1;background:var(--card);border:1px solid var(--border);border-radius:14px;padding:10px 6px;text-align:center}
+.lucky-item .l-emoji{font-size:18px;margin-bottom:4px}
+.lucky-item .l-label{font-size:9px;color:var(--sub)}
+.lucky-item .l-val{font-size:13px;font-weight:bold;margin-top:3px}
+
+/* ── MODAL ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.72);z-index:100;align-items:flex-end}
+.overlay.open{display:flex}
+.sheet{width:100%;max-height:92vh;background:#0c0f22;border-radius:24px 24px 0 0;border-top:1px solid var(--border);overflow-y:auto;padding-bottom:36px;animation:up .28s ease-out}
+@keyframes up{from{transform:translateY(60%);opacity:.4}to{transform:translateY(0);opacity:1}}
+.handle{width:36px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;margin:12px auto 0}
+.modal-hdr{display:flex;align-items:center;padding:16px 20px 10px;gap:10px}
+.modal-hdr .m-icon{font-size:26px}
+.modal-hdr .m-title{font-size:17px;font-weight:bold}
+.modal-hdr .m-close{margin-left:auto;background:none;border:none;color:var(--sub);font-size:24px;cursor:pointer;line-height:1}
+.modal-body{padding:0 20px}
+
+/* ── DETAIL ── */
+.detail-gauge-row{display:flex;flex-direction:column;align-items:center;margin-bottom:16px}
+.detail-gauge-wrap{width:min(56vw,200px)}
+.detail-gauge-wrap svg{width:100%;height:auto}
+.d-pts{text-align:center;margin-top:2px}
+.d-pts .d-num{font-size:clamp(22px,7vw,34px);font-weight:bold;line-height:1}
+.d-pts .d-denom{font-size:12px;color:var(--sub)}
+.d-keyword{font-size:18px;font-weight:bold;margin:8px 0 3px;text-align:center}
+.sec-title{font-size:11px;font-weight:bold;color:var(--sub);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+.reading-box{background:rgba(255,255,255,.04);border:1px solid var(--border);border-radius:14px;padding:14px;font-size:13px;line-height:1.75;color:rgba(255,255,255,.85);margin-bottom:16px}
+
+/* Cycle cards */
+.cycle-card{border-radius:12px;padding:12px;margin-bottom:8px;border:1px solid}
+.cycle-hdr{display:flex;align-items:center;gap:8px;margin-bottom:5px}
+.cycle-period{font-size:10px;color:rgba(255,255,255,.4);background:rgba(255,255,255,.08);padding:2px 8px;border-radius:6px}
+.cycle-phase{font-size:15px;font-weight:bold}
+.cycle-stars{margin-left:auto;font-size:11px}
+.cycle-desc{font-size:12px;line-height:1.6;color:rgba(255,255,255,.7)}
+
+/* Sub scores */
+.sub-item{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.sub-icon{font-size:14px;width:20px;text-align:center}
+.sub-label{font-size:11px;color:var(--sub);width:38px}
+.sub-bar{flex:1;height:6px;background:rgba(255,255,255,.1);border-radius:3px;overflow:hidden}
+.sub-fill{height:100%;border-radius:3px;width:0;transition:width 1s ease-out}
+.sub-val{font-size:12px;font-weight:bold;width:28px;text-align:right}
+</style>
+</head>
+<body>
+
+<!-- SETUP -->
+<div id="setup" class="screen active">
+  <div class="setup-card">
+    <div style="font-size:48px;margin-bottom:12px">✨</div>
+    <div class="setup-title">占いダッシュボード</div>
+    <div class="setup-sub">生年月日を入力して<br>8種類の占いを一括診断</div>
+    <div class="input-group">
+      <label>生年月日</label>
+      <input type="date" id="birth-input" max="2010-01-01">
+    </div>
+    <button class="btn" onclick="startApp()">占いを始める ✨</button>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" class="screen">
+  <div class="header">
+    <div class="header-left">
+      <div class="title">占いダッシュボード</div>
+      <div class="date-lbl" id="today-lbl"></div>
+    </div>
+    <button class="icon-btn" onclick="openSettings()">⚙️</button>
+  </div>
+
+  <!-- Overall card -->
+  <div class="overall-card">
+    <div class="overall-top">
+      <div class="overall-label-chip" id="overall-chip">今日の総合運勢</div>
+      <div class="overall-gauge-wrap">
+        <svg id="ovg" viewBox="0 0 120 95">
+          <circle class="gtrack" cx="60" cy="52" r="44"/>
+          <circle class="gfill"  id="ovf" cx="60" cy="52" r="44"/>
+          <g class="gneedle" id="ovn" style="transform-origin:60px 52px">
+            <line x1="60" y1="52" x2="60" y2="12" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+            <circle cx="60" cy="52" r="5" fill="white"/>
+          </g>
+        </svg>
+      </div>
+      <div class="pts-badge">
+        <div><span class="pts-num" id="ov-num">0</span><span class="pts-denom"> / 100</span></div>
+        <div class="pts-label">8占術の平均スコア</div>
+      </div>
+      <div class="overall-msg" id="ov-msg">計算中...</div>
+    </div>
+    <hr class="divider">
+    <div class="fortune-grid" id="fgrid"></div>
+  </div>
+
+  <!-- Biorhythm mini -->
+  <div class="bio-mini">
+    <div class="bio-mini-hdr">
+      <div class="bio-title">🌊 バイオリズム</div>
+    </div>
+    <canvas id="bio-c" style="width:100%;height:70px"></canvas>
+    <div class="bio-legend">
+      <span style="color:#ef4444">● 身体(23日)</span>
+      <span style="color:#f59e0b">● 感情(28日)</span>
+      <span style="color:#3b82f6">● 知性(33日)</span>
+    </div>
+  </div>
+
+  <!-- Lucky -->
+  <div class="lucky-row">
+    <div class="lucky-item"><div class="l-emoji">🎨</div><div class="l-label">カラー</div><div class="l-val" id="lc">-</div></div>
+    <div class="lucky-item"><div class="l-emoji">🔢</div><div class="l-label">ナンバー</div><div class="l-val" id="ln">-</div></div>
+    <div class="lucky-item"><div class="l-emoji">🧭</div><div class="l-label">方位</div><div class="l-val" id="ld">-</div></div>
+    <div class="lucky-item"><div class="l-emoji">✨</div><div class="l-label">アクション</div><div class="l-val" id="la" style="font-size:10px">-</div></div>
+  </div>
+</div>
+
+<!-- DETAIL MODAL -->
+<div class="overlay" id="dmodal" onclick="closeDetail(event)">
+  <div class="sheet">
+    <div class="handle"></div>
+    <div class="modal-hdr">
+      <span class="m-icon" id="m-icon"></span>
+      <span class="m-title" id="m-title"></span>
+      <button class="m-close" onclick="closeDetailModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="detail-gauge-row">
+        <div class="detail-gauge-wrap">
+          <svg id="dtg" viewBox="0 0 120 95">
+            <circle class="gtrack" cx="60" cy="52" r="44"/>
+            <circle class="gfill" id="dtf" cx="60" cy="52" r="44"/>
+            <g class="gneedle" id="dtn" style="transform-origin:60px 52px">
+              <line x1="60" y1="52" x2="60" y2="12" stroke="white" stroke-width="2.5" stroke-linecap="round"/>
+              <circle cx="60" cy="52" r="5" fill="white"/>
+            </g>
+          </svg>
+        </div>
+        <div class="d-pts">
+          <span class="d-num" id="dt-num">0</span><span class="d-denom"> / 100</span>
+        </div>
+        <div class="d-keyword" id="dt-kw"></div>
+      </div>
+
+      <div class="sec-title">今日のリーディング</div>
+      <div class="reading-box" id="dt-reading"></div>
+      <div class="sec-title">アドバイス</div>
+      <div class="reading-box" id="dt-advice" style="color:rgba(255,255,255,.6)"></div>
+
+      <div id="rokusei-sec" style="display:none">
+        <div class="sec-title">日運・月運・年運</div>
+        <div id="cycle-cards"></div>
+      </div>
+
+      <div class="sec-title">サブスコア</div>
+      <div>
+        <div class="sub-item">
+          <div class="sub-icon">❤️</div><div class="sub-label">恋愛運</div>
+          <div class="sub-bar"><div class="sub-fill" id="sb-love" style="background:#f472b6"></div></div>
+          <div class="sub-val" id="sv-love">0</div>
+        </div>
+        <div class="sub-item">
+          <div class="sub-icon">💼</div><div class="sub-label">仕事運</div>
+          <div class="sub-bar"><div class="sub-fill" id="sb-work" style="background:#22d3ee"></div></div>
+          <div class="sub-val" id="sv-work">0</div>
+        </div>
+        <div class="sub-item">
+          <div class="sub-icon">💰</div><div class="sub-label">金運</div>
+          <div class="sub-bar"><div class="sub-fill" id="sb-money" style="background:#fbbf24"></div></div>
+          <div class="sub-val" id="sv-money">0</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SETTINGS MODAL -->
+<div class="overlay" id="smodal" onclick="closeSettings(event)">
+  <div class="sheet">
+    <div class="handle"></div>
+    <div class="modal-hdr">
+      <span class="m-icon">⚙️</span>
+      <span class="m-title">設定</span>
+      <button class="m-close" onclick="closeSettingsModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <div class="input-group">
+        <label>生年月日を変更</label>
+        <input type="date" id="s-birth" max="2010-01-01">
+      </div>
+      <button class="btn" onclick="updateBirth()">更新する</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══ GAUGE CONSTANTS ═══
+// Circle r=44, center(60,52), ViewBox 0 0 120 95
+// 270° arc: starts at 7:30 (SW), ends at 4:30 (SE), gap at bottom 90°
+const GR = 44, GCX = 60, GCY = 52;
+const GC  = 2 * Math.PI * GR;      // ≈ 276.46
+const GARC = GC * 0.75;             // 270° arc ≈ 207.35
+const GGAP = GC * 0.25;             //  90° gap  ≈  69.12
+const GROT = 135;                   // rotate so arc starts at SW
+
+// inject gauge CSS once
+(function(){
+  const s = document.createElement('style');
+  s.textContent = `
+    .gtrack{fill:none;stroke:rgba(255,255,255,.12);stroke-width:7;
+      stroke-dasharray:${GARC.toFixed(2)} ${GC.toFixed(2)};
+      stroke-linecap:round;
+      transform:rotate(${GROT}deg);transform-origin:${GCX}px ${GCY}px}
+    .gfill{fill:none;stroke-width:7;
+      stroke-dasharray:${GARC.toFixed(2)} ${GC.toFixed(2)};
+      stroke-dashoffset:${GARC.toFixed(2)};
+      stroke-linecap:round;
+      transform:rotate(${GROT}deg);transform-origin:${GCX}px ${GCY}px;
+      transition:stroke-dashoffset 1s ease-out}
+    .gneedle{transform:rotate(-135deg);transition:transform 1s ease-out}
+  `;
+  document.head.appendChild(s);
+})();
+
+function animGauge(fillEl, needleEl, numEl, score, color, delay, vid){
+  delay = delay || 0;
+  const targetDeg = -135+(score/100)*270;
+  if(vid) stopVibration(vid);
+  setTimeout(()=>{
+    fillEl.style.stroke = color;
+    fillEl.style.strokeDashoffset = (GARC*(1-score/100)).toFixed(2);
+    needleEl.style.transition = 'transform 1s ease-out';
+    needleEl.style.transform = `rotate(${targetDeg}deg)`;
+    if(numEl){
+      let cur=0, inc=score/28;
+      const t=setInterval(()=>{
+        cur=Math.min(cur+inc,score);
+        numEl.textContent=Math.round(cur);
+        if(cur>=score)clearInterval(t);
+      },1000/60);
+    }
+    if(vid) setTimeout(()=>startVibration(needleEl,targetDeg,vid),1150);
+  },delay);
+}
+
+function scoreColor(s){return s>=70?'#4ade80':s>=40?'#22d3ee':'#fb923c'}
+
+// ═══ SCORING ═══
+function days(birth,date){return Math.floor((date-birth)/86400000)}
+function sinScore(d,p){return Math.round((Math.sin(2*Math.PI*d/p)+1)/2*100)}
+function composite(birth,today,p1,p2,p3){
+  const d=days(birth,today);
+  return Math.round(sinScore(d,p1)*.5+sinScore(d,p2)*.3+sinScore(d,p3)*.2);
+}
+function sub(birth,today,off){
+  const d=days(birth,today)+off;
+  return Math.round((Math.sin(2*Math.PI*d/17)+1)/2*100);
+}
+
+// ═══ FORTUNE TYPES ═══
+const FT=[
+  {id:'rokusei',   name:'六星占術',  icon:'🪐',color:'#a78bfa',p1:12, p2:365,p3:30 },
+  {id:'numerology',name:'数秘術',    icon:'🔢',color:'#60a5fa',p1:9,  p2:27, p3:45 },
+  {id:'kyusei',    name:'九星気学',  icon:'⭐',color:'#fbbf24',p1:9,  p2:81, p3:27 },
+  {id:'animal',    name:'動物占い',  icon:'🐾',color:'#34d399',p1:12, p2:60, p3:30 },
+  {id:'maya',      name:'マヤ暦',    icon:'🏛',color:'#f97316',p1:13, p2:20, p3:260},
+  {id:'zerogaku',  name:'ゼロ学',    icon:'0️⃣',color:'#e879f9',p1:12, p2:36, p3:60 },
+  {id:'shichuu',   name:'四柱推命',  icon:'☯️',color:'#f43f5e',p1:10, p2:60, p3:12 },
+  {id:'western',   name:'星座占い',  icon:'♈',color:'#38bdf8',p1:365,p2:30, p3:7  },
+];
+
+// ═══ KEYWORDS ═══
+function getKeyword(id,b){
+  switch(id){
+    case'rokusei':{
+      const m=b.getMonth(),d=b.getDate(),y=b.getFullYear();
+      const adj=(m===0||(m===1&&d<4))?y-1:y;
+      const base=(adj%100)+(m+1)+d+2, num=((base-1)%12)+1;
+      const stars=['土星人','金星人','火星人','天王星人','木星人','水星人'];
+      return stars[(num-1)%6]+(num>=7?'(+)':'(-)');
+    }
+    case'numerology':{
+      let n=b.getFullYear()+(b.getMonth()+1)+b.getDate();
+      while(n>9&&n!==11&&n!==22)n=`${n}`.split('').reduce((a,c)=>a+parseInt(c),0);
+      return `ライフパス ${n}`;
+    }
+    case'kyusei':{
+      const m=b.getMonth(),d=b.getDate(),y=b.getFullYear();
+      const adj=(m===0||(m===1&&d<4))?y-1:y;
+      let s=`${adj}`.split('').reduce((a,c)=>a+parseInt(c),0);
+      while(s>=10)s=`${s}`.split('').reduce((a,c)=>a+parseInt(c),0);
+      const idx=((11-s)%9)||9;
+      return ['','一白水星','二黒土星','三碧木星','四緑木星','五黄土星','六白金星','七赤金星','八白土星','九紫火星'][idx];
+    }
+    case'animal':{
+      const a=['子守熊','狼','チータ','猿','鷹','ライオン','虎','タヌキ','ペガサス','豹','象','羊'];
+      return a[((b.getFullYear()-4)%12+12)%12]+'族';
+    }
+    case'maya':{
+      const ep=new Date(1899,11,31);
+      const kin=(Math.floor((b-ep)/86400000)%260+260)%260||260;
+      return `KIN ${kin}`;
+    }
+    case'zerogaku':{
+      let n=b.getDate();
+      while(n>9)n=`${n}`.split('').reduce((a,c)=>a+parseInt(c),0);
+      return `0学 ${n}番`;
+    }
+    case'shichuu':{
+      const stems=['甲','乙','丙','丁','戊','己','庚','辛','壬','癸'];
+      const el=['木','火','土','金','水'];
+      const idx=b.getFullYear()%10;
+      return `${stems[idx]}・${el[idx%5]}の命`;
+    }
+    case'western':{
+      const m=b.getMonth()+1,d=b.getDate();
+      const sg=[
+        [3,21,'牡羊座♈'],[4,20,'牡牛座♉'],[5,21,'双子座♊'],[6,22,'蟹座♋'],
+        [7,23,'獅子座♌'],[8,23,'乙女座♍'],[9,23,'天秤座♎'],[10,24,'蠍座♏'],
+        [11,23,'射手座♐'],[12,22,'山羊座♑'],[1,20,'水瓶座♒'],[2,19,'魚座♓'],
+      ];
+      for(let i=0;i<sg.length;i++){
+        if(m===sg[i][0]&&d>=sg[i][1])return sg[i][2];
+        if(m===sg[(i+1)%12][0]&&d<sg[(i+1)%12][1])return sg[i][2];
+      }
+      return '牡羊座♈';
+    }
+  }
+}
+
+// ═══ MESSAGES ═══
+const MSGS=[
+  '今日は静かに過ごすことが内側のエネルギーを回復させます。無理は禁物。',
+  '少し慎重めに。急ぎすぎず丁寧に行動することが明日の運気につながります。',
+  '穏やかな一日です。いつも通りに過ごすことが吉。',
+  '運気上昇中！積極的に動くことで良い結果が生まれます。',
+  '絶好調の一日✨ あなたの魅力が輝いています。大切な人への連絡はぜひ今日に。',
+];
+const ADVICE=[
+  '今日は休息を大切に。無理な計画は明日に回しましょう。',
+  'いつも通りの行動が吉。焦らず着実に進みましょう。',
+  '笑顔で積極的に！周りにも良いエネルギーを伝えましょう。',
+];
+function msg(score){return MSGS[score>=80?4:score>=60?3:score>=40?2:score>=20?1:0]}
+function adv(score){return ADVICE[score>=60?2:score>=35?1:0]}
+function ovMsg(s){
+  if(s>=80)return '最高の一日になりそう！✨ 積極的に動いて';
+  if(s>=65)return 'いい調子！自信を持って進もう 💪';
+  if(s>=50)return '穏やかな一日。マイペースでOK 🌿';
+  if(s>=35)return '少し控えめに。充電日にしよう 🔋';
+  return 'ゆっくり過ごそう。明日はきっと良くなる 🌅';
+}
+
+// ═══ 六星占術 9サイクル（正式名称）═══
+// 蘇生・小殺界などは存在しない。正しくは種子〜大殺界の9フェーズ。
+const ROKUSEI_PHASES=['種子','緑生','立花','達成','乱気','衰退','陰影','停止','大殺界'];
+const ROKUSEI_DESC={
+  '種子':'新たなサイクルの始まり。可能性の種が宿る時。焦らず静かに土台を整えましょう。',
+  '緑生':'芽吹きの時期。少しずつ動き出すと吉。継続することが力になります。',
+  '立花':'花開く時期。積極的な行動が実を結びます。自信を持って前へ進んで。',
+  '達成':'サイクルの絶頂！努力が認められ成果を手にできる最高の時期です。',
+  '乱気':'変化の多い過渡期。焦らず柔軟に対応することが鍵。',
+  '衰退':'エネルギーが落ち着く時期。今あるものを守り大切にしましょう。',
+  '陰影':'大殺界の入口。慎重に行動し、大きな決断は先延ばしに。',
+  '停止':'大殺界の中心。動かないことが最善策。内省に時間を使いましょう。',
+  '大殺界':'大殺界の終盤。もうすぐ終わります。耐えることで次のサイクルが輝きます。',
+};
+const ROKUSEI_LUCK={
+  '種子':'★★★☆☆','緑生':'★★★☆☆','立花':'★★★★☆','達成':'★★★★★',
+  '乱気':'★★★☆☆','衰退':'★★☆☆☆','陰影':'★☆☆☆☆','停止':'★☆☆☆☆','大殺界':'★☆☆☆☆',
+};
+function rokuseiCycles(birth){
+  const today=new Date();
+  const dayIdx=((days(birth,today)%9)+9)%9;
+  const totalM=(today.getFullYear()-birth.getFullYear())*12+(today.getMonth()-birth.getMonth());
+  const monIdx=((totalM%9)+9)%9;
+  const yrIdx=((today.getFullYear()-birth.getFullYear())%9+9)%9;
+  return[
+    {p:'今日',ph:ROKUSEI_PHASES[dayIdx]},
+    {p:'今月',ph:ROKUSEI_PHASES[monIdx]},
+    {p:'今年',ph:ROKUSEI_PHASES[yrIdx]},
+  ];
+}
+
+// ═══ BIORHYTHM ═══
+function bioSin(birth,date,period){
+  return Math.sin(2*Math.PI*days(birth,date)/period);
+}
+function drawBio(canvas,birth){
+  const W=canvas.offsetWidth||canvas.parentElement.offsetWidth||300;
+  const H=canvas.offsetHeight||70;
+  canvas.width=W;canvas.height=H;
+  const ctx=canvas.getContext('2d');
+  ctx.clearRect(0,0,W,H);
+  const N=61,half=30;
+  const today=new Date();
+
+  // center line
+  ctx.strokeStyle='rgba(255,255,255,.1)';ctx.lineWidth=1;
+  ctx.setLineDash([4,4]);
+  ctx.beginPath();ctx.moveTo(0,H/2);ctx.lineTo(W,H/2);ctx.stroke();
+  ctx.setLineDash([]);
+
+  [{p:23,c:'#ef4444'},{p:28,c:'#f59e0b'},{p:33,c:'#3b82f6'}].forEach(({p,c})=>{
+    ctx.strokeStyle=c;ctx.lineWidth=1.8;ctx.beginPath();
+    for(let i=0;i<N;i++){
+      const d2=new Date(today);d2.setDate(today.getDate()-half+i);
+      const v=bioSin(birth,d2,p);
+      const x=(i/(N-1))*W, y=H/2-v*(H/2)*.88;
+      i===0?ctx.moveTo(x,y):ctx.lineTo(x,y);
+    }
+    ctx.stroke();
+  });
+
+  // today line
+  const tx=(half/(N-1))*W;
+  ctx.strokeStyle='rgba(255,255,255,.35)';ctx.lineWidth=1;
+  ctx.setLineDash([3,3]);
+  ctx.beginPath();ctx.moveTo(tx,0);ctx.lineTo(tx,H);ctx.stroke();
+  ctx.setLineDash([]);
+}
+
+// ═══ LUCKY ITEMS ═══
+const LCOLS=['赤','橙','黄','緑','青','藍','紫','ピンク','白','金'];
+const LDIRS=['北','北東','東','南東','南','南西','西','北西'];
+const LACTS=['読書','散歩','掃除','料理','運動','瞑想','会話','創作'];
+
+// ═══ APP STATE ═══
+let birthDate=null, results=[];
+const vibrAF={};
+function startVibration(needleEl,targetDeg,vid){
+  if(vibrAF[vid])cancelAnimationFrame(vibrAF[vid]);
+  const amp=1.5,freq=0.0035;
+  function tick(){
+    const off=Math.sin(Date.now()*freq)*amp;
+    needleEl.style.transition='none';
+    needleEl.style.transform=`rotate(${targetDeg+off}deg)`;
+    vibrAF[vid]=requestAnimationFrame(tick);
+  }
+  vibrAF[vid]=requestAnimationFrame(tick);
+}
+function stopVibration(vid){
+  if(vibrAF[vid]){cancelAnimationFrame(vibrAF[vid]);delete vibrAF[vid];}
+}
+function stopAllVibrations(){Object.keys(vibrAF).forEach(stopVibration);}
+
+// ═══ CALCULATE ═══
+function calculate(){
+  const today=new Date();
+  results=FT.map(ft=>{
+    const score=composite(birthDate,today,ft.p1,ft.p2,ft.p3);
+    return{...ft,score,
+      love:sub(birthDate,today,7),
+      work:sub(birthDate,today,14),
+      money:sub(birthDate,today,21),
+      keyword:getKeyword(ft.id,birthDate),
+      reading:msg(score),advice:adv(score)};
+  });
+}
+
+// ═══ RENDER ═══
+function render(){
+  const today=new Date();
+  document.getElementById('today-lbl').textContent=
+    `${today.getFullYear()}年${today.getMonth()+1}月${today.getDate()}日`;
+
+  const overall=Math.round(results.reduce((a,b)=>a+b.score,0)/results.length);
+  const oc=scoreColor(overall);
+
+  // Overall chip color
+  const chip=document.getElementById('overall-chip');
+  chip.style.background=oc+'25';chip.style.color=oc;
+
+  document.getElementById('ov-msg').textContent=ovMsg(overall);
+
+  // Overall gauge
+  setTimeout(()=>{
+    animGauge(
+      document.getElementById('ovf'),
+      document.getElementById('ovn'),
+      document.getElementById('ov-num'),
+      overall,oc,0,'overall'
+    );
+  },150);
+
+  // Fortune grid
+  const grid=document.getElementById('fgrid');
+  grid.innerHTML='';
+  results.forEach((r,i)=>{
+    const b=document.createElement('div');
+    b.className='fblock';
+    b.style.borderColor=r.color+'44';
+    b.innerHTML=`
+      <div class="f-icon">${r.icon}</div>
+      <svg viewBox="0 0 120 95">
+        <circle class="gtrack" cx="60" cy="52" r="44"/>
+        <circle class="gfill" id="gf-${r.id}" cx="60" cy="52" r="44"/>
+        <g class="gneedle" id="gn-${r.id}" style="transform-origin:60px 52px">
+          <line x1="60" y1="52" x2="60" y2="14" stroke="white" stroke-width="2" stroke-linecap="round"/>
+          <circle cx="60" cy="52" r="4" fill="white"/>
+        </g>
+      </svg>
+      <div class="f-score" id="gs-${r.id}" style="color:${scoreColor(r.score)}">0</div>
+      <div class="f-name">${r.name}</div>
+    `;
+    b.onclick=()=>openDetail(r);
+    grid.appendChild(b);
+    setTimeout(()=>animGauge(
+      document.getElementById(`gf-${r.id}`),
+      document.getElementById(`gn-${r.id}`),
+      document.getElementById(`gs-${r.id}`),
+      r.score,r.color,0,r.id
+    ),300+i*70);
+  });
+
+  // Biorhythm
+  const bc=document.getElementById('bio-c');
+  requestAnimationFrame(()=>drawBio(bc,birthDate));
+
+  // Lucky
+  const d=days(birthDate,today);
+  const bv=(bioSin(birthDate,today,28)+1)/2;
+  document.getElementById('lc').textContent=LCOLS[Math.min(Math.floor(bv*LCOLS.length),LCOLS.length-1)];
+  document.getElementById('ln').textContent=(d%9)+1;
+  document.getElementById('ld').textContent=LDIRS[Math.min(Math.floor(bv*LDIRS.length),LDIRS.length-1)];
+  document.getElementById('la').textContent=LACTS[d%LACTS.length];
+}
+
+// ═══ DETAIL MODAL ═══
+function openDetail(r){
+  document.getElementById('m-icon').textContent=r.icon;
+  document.getElementById('m-title').textContent=r.name;
+  document.getElementById('dt-kw').textContent=r.keyword;
+  document.getElementById('dt-kw').style.color=r.color;
+  document.getElementById('dt-reading').textContent=r.reading;
+  document.getElementById('dt-advice').textContent=r.advice;
+
+  // Reset gauge
+  const dtf=document.getElementById('dtf'),dtn=document.getElementById('dtn');
+  dtf.style.transition='none';dtn.style.transition='none';
+  dtf.style.strokeDashoffset=GARC.toFixed(2);
+  dtn.style.transform='rotate(-135deg)';
+  document.getElementById('dt-num').textContent='0';
+
+  // Sub scores reset
+  ['love','work','money'].forEach(k=>{
+    document.getElementById(`sb-${k}`).style.width='0%';
+    document.getElementById(`sv-${k}`).textContent='0';
+  });
+
+  // Rokusei cycles
+  const sec=document.getElementById('rokusei-sec');
+  if(r.id==='rokusei'){
+    sec.style.display='block';
+    const cycles=rokuseiCycles(birthDate);
+    document.getElementById('cycle-cards').innerHTML=cycles.map(c=>{
+      const bad=['大殺界','停止','陰影'].includes(c.ph);
+      const good=['達成','立花'].includes(c.ph);
+      const bg=bad?'rgba(239,68,68,.12)':good?'rgba(74,222,128,.12)':'rgba(99,102,241,.12)';
+      const fc=bad?'#fca5a5':good?'#86efac':'#a5b4fc';
+      return`<div class="cycle-card" style="background:${bg};border-color:${fc}44">
+        <div class="cycle-hdr">
+          <span class="cycle-period">${c.p}</span>
+          <span class="cycle-phase" style="color:${fc}">${c.ph}</span>
+          <span class="cycle-stars" style="color:${fc}">${ROKUSEI_LUCK[c.ph]||''}</span>
+        </div>
+        <div class="cycle-desc">${ROKUSEI_DESC[c.ph]||''}</div>
+      </div>`;
+    }).join('');
+  } else sec.style.display='none';
+
+  document.getElementById('dmodal').classList.add('open');
+
+  // Animate
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    dtf.style.transition='';dtn.style.transition='';
+    animGauge(dtf,dtn,document.getElementById('dt-num'),r.score,r.color);
+    setTimeout(()=>{
+      document.getElementById('sb-love').style.width=r.love+'%';
+      document.getElementById('sb-work').style.width=r.work+'%';
+      document.getElementById('sb-money').style.width=r.money+'%';
+      document.getElementById('sv-love').textContent=r.love;
+      document.getElementById('sv-work').textContent=r.work;
+      document.getElementById('sv-money').textContent=r.money;
+    },200);
+  }));
+}
+function closeDetailModal(){
+  document.getElementById('dmodal').classList.remove('open');
+  replayDashboardAnimations();
+}
+function closeDetail(e){if(e.target===e.currentTarget)closeDetailModal()}
+
+function replayDashboardAnimations(){
+  stopAllVibrations();
+  const overall=Math.round(results.reduce((a,b)=>a+b.score,0)/results.length);
+  const oc=scoreColor(overall);
+
+  // Reset overall gauge
+  const ovf=document.getElementById('ovf'),ovn=document.getElementById('ovn');
+  ovf.style.transition='none';ovn.style.transition='none';
+  ovf.style.strokeDashoffset=GARC.toFixed(2);
+  ovn.style.transform='rotate(-135deg)';
+  document.getElementById('ov-num').textContent='0';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    ovf.style.transition='';ovn.style.transition='';
+    animGauge(ovf,ovn,document.getElementById('ov-num'),overall,oc,80,'overall');
+  }));
+
+  // Reset & replay grid gauges
+  results.forEach((r,i)=>{
+    const gf=document.getElementById(`gf-${r.id}`);
+    const gn=document.getElementById(`gn-${r.id}`);
+    const gs=document.getElementById(`gs-${r.id}`);
+    if(!gf||!gn)return;
+    gf.style.transition='none';gn.style.transition='none';
+    gf.style.strokeDashoffset=GARC.toFixed(2);
+    gn.style.transform='rotate(-135deg)';
+    if(gs)gs.textContent='0';
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{
+      gf.style.transition='';gn.style.transition='';
+      setTimeout(()=>animGauge(gf,gn,gs,r.score,r.color,0,r.id),280+i*70);
+    }));
+  });
+}
+
+// ═══ SETTINGS ═══
+function openSettings(){
+  if(birthDate){
+    const y=birthDate.getFullYear(),m=String(birthDate.getMonth()+1).padStart(2,'0'),d=String(birthDate.getDate()).padStart(2,'0');
+    document.getElementById('s-birth').value=`${y}-${m}-${d}`;
+  }
+  document.getElementById('smodal').classList.add('open');
+}
+function closeSettingsModal(){document.getElementById('smodal').classList.remove('open')}
+function closeSettings(e){if(e.target===e.currentTarget)closeSettingsModal()}
+function updateBirth(){
+  const v=document.getElementById('s-birth').value;
+  if(!v)return;
+  birthDate=new Date(v+'T00:00:00');
+  localStorage.setItem('bd',birthDate.toISOString());
+  closeSettingsModal();
+  calculate();render();
+}
+
+// ═══ SETUP ═══
+function startApp(){
+  const v=document.getElementById('birth-input').value;
+  if(!v){alert('生年月日を入力してください');return}
+  birthDate=new Date(v+'T00:00:00');
+  if(isNaN(birthDate)){alert('正しい日付を入力してください');return}
+  localStorage.setItem('bd',birthDate.toISOString());
+  show('dashboard');calculate();render();
+}
+
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>{
+    s.classList.remove('active');
+    s.style.display='none';
+  });
+  const el=document.getElementById(id);
+  el.classList.add('active');
+  el.style.display=id==='setup'?'flex':'block';
+}
+
+// ═══ INIT ═══
+window.addEventListener('load',()=>{
+  const saved=localStorage.getItem('bd');
+  if(saved){
+    birthDate=new Date(saved);
+    if(!isNaN(birthDate)){show('dashboard');calculate();render();return}
+  }
+  show('setup');
+});
+</script>
+</body>
+</html>

@@ -4,4 +4,8 @@ import react from '@vitejs/plugin-react'
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [react()],
+  base: '/multi_uranai/',
+  build: {
+    target: ['es2015', 'chrome58', 'firefox57', 'safari11'],
+  },
 })

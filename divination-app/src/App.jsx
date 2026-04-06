@@ -31,22 +31,22 @@ export default function App() {
 
   return (
     <div className="app">
-      <div className="bg-orbs">
+      <div className="bg-canvas">
         <div className="orb orb1" />
         <div className="orb orb2" />
         <div className="orb orb3" />
-        <div className="orb orb4" />
       </div>
 
-      <header className="header glass">
+      <header className="header">
         <div className="header-inner">
-          <div className="star-decoration">✦ ✧ ✦</div>
-          <h1 className="title">
-            <span className="title-ja">天命占い</span>
-            <span className="title-en">MULTI DIVINATION</span>
-          </h1>
-          <div className="star-decoration">✦ ✧ ✦</div>
+          <span className="title-sep">◈</span>
+          <div>
+            <div className="title-ja">天命占い</div>
+            <div className="title-en">CELESTIAL DIVINATION ORACLE</div>
+          </div>
+          <span className="title-sep">◈</span>
         </div>
+        <div className="header-glow" />
       </header>
 
       <main className="main">
@@ -55,32 +55,31 @@ export default function App() {
         {results && (
           <div className="results">
             <div className="results-header">
-              <span className="results-date">
-                {date.year}年{date.month}月{date.day}日生まれの運命
-              </span>
+              <div className="results-date">
+                ◈ {date.year}.{String(date.month).padStart(2,'0')}.{String(date.day).padStart(2,'0')} ◈
+              </div>
             </div>
-
             <div className="cards-grid">
-              <ZodiacCard data={results.zodiac} />
-              <SixStarCard data={results.sixStar} />
-              <NineStarCard data={results.nineStar} />
-              <NumerologyCard data={results.numerology} />
-              <FourPillarsCard data={results.fourPillars} />
+              <ZodiacCard data={results.zodiac} birthDate={date} />
+              <SixStarCard data={results.sixStar} birthDate={date} />
+              <NineStarCard data={results.nineStar} birthDate={date} />
+              <NumerologyCard data={results.numerology} birthDate={date} />
+              <FourPillarsCard data={results.fourPillars} birthDate={date} />
             </div>
           </div>
         )}
 
         {!results && (
-          <div className="welcome glass">
-            <div className="welcome-icon">🌙</div>
-            <p className="welcome-text">生年月日を入力して<br />あなたの運命を紐解く</p>
-            <div className="welcome-stars">✦ ✧ ★ ✧ ✦</div>
+          <div className="welcome">
+            <span className="welcome-orb">🔮</span>
+            <p className="welcome-text">生年月日を入力して<br />天命の扉を開く</p>
+            <div className="welcome-hint">∿ 5種の占術で運命を解析 ∿</div>
           </div>
         )}
       </main>
 
       <footer className="footer">
-        <p>© 2024 天命占い · 占いは参考程度にお楽しみください</p>
+        CELESTIAL DIVINATION ORACLE · 占いは参考程度にお楽しみください
       </footer>
     </div>
   )

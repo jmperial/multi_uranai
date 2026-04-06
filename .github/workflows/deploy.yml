@@ -25,20 +25,10 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22
-          cache: npm
-          cache-dependency-path: divination-app/package-lock.json
-
-      - name: Install dependencies
-        run: npm ci
-        working-directory: divination-app
-
-      - name: Build
-        run: npm run build
-        working-directory: divination-app
+      - name: Prepare deploy folder
+        run: |
+          mkdir -p _site
+          cp vanilla_web/index.html _site/index.html
 
       - name: Copy okashi-app to dist
         run: cp -r okashi-app divination-app/dist/okashi-app
@@ -49,7 +39,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: divination-app/dist
+          path: _site
 
       - name: Deploy to GitHub Pages
         id: deployment
