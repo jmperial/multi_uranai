@@ -30,8 +30,8 @@ jobs:
           mkdir -p _site
           cp vanilla_web/index.html _site/index.html
 
-      - name: Copy okashi-app to dist
-        run: cp -r okashi-app divination-app/dist/okashi-app
+      - name: Copy okashi-app to site
+        run: cp -r okashi-app _site/okashi-app
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
