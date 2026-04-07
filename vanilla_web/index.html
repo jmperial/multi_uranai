@@ -22,6 +22,10 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:-ap
 .input-group label{font-size:12px;color:var(--sub);margin-bottom:6px;display:block}
 .input-group input[type=date]{width:100%;padding:14px 16px;background:rgba(255,255,255,.08);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:16px;outline:none}
 .input-group input[type=date]:focus{border-color:var(--cyan)}
+.date-selects{display:flex;gap:8px}
+.date-selects select{flex:1;padding:14px 8px;background:rgba(255,255,255,.08);border:1px solid var(--border);border-radius:12px;color:var(--text);font-size:15px;outline:none;-webkit-appearance:none;appearance:none;text-align:center;cursor:pointer}
+.date-selects select:focus{border-color:var(--cyan)}
+.date-selects select option{background:#0c0f22;color:var(--text)}
 .btn{width:100%;padding:16px;background:linear-gradient(135deg,#6366f1,#22d3ee);border:none;border-radius:14px;color:#fff;font-size:16px;font-weight:bold;cursor:pointer;transition:opacity .15s}
 .btn:active{opacity:.8}
 
@@ -119,7 +123,11 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:-ap
     <div class="setup-sub">生年月日を入力して<br>8種類の占いを一括診断</div>
     <div class="input-group">
       <label>生年月日</label>
-      <input type="date" id="birth-input" max="2010-01-01">
+      <div class="date-selects">
+        <select id="bd-y"><option value="">年</option></select>
+        <select id="bd-m"><option value="">月</option></select>
+        <select id="bd-d"><option value="">日</option></select>
+      </div>
     </div>
     <button class="btn" onclick="startApp()">占いを始める ✨</button>
   </div>
@@ -252,7 +260,11 @@ html,body{min-height:100%;background:var(--bg);color:var(--text);font-family:-ap
     <div class="modal-body">
       <div class="input-group">
         <label>生年月日を変更</label>
-        <input type="date" id="s-birth" max="2010-01-01">
+        <div class="date-selects">
+          <select id="sb-y"><option value="">年</option></select>
+          <select id="sb-m"><option value="">月</option></select>
+          <select id="sb-d"><option value="">日</option></select>
+        </div>
       </div>
       <button class="btn" onclick="updateBirth()">更新する</button>
     </div>
@@ -692,29 +704,69 @@ function replayDashboardAnimations(){
 
 // ═══ SETTINGS ═══
 function openSettings(){
-  if(birthDate){
-    const y=birthDate.getFullYear(),m=String(birthDate.getMonth()+1).padStart(2,'0'),d=String(birthDate.getDate()).padStart(2,'0');
-    document.getElementById('s-birth').value=`${y}-${m}-${d}`;
-  }
+  if(birthDate)setDateToSelects('sb-y','sb-m','sb-d',birthDate);
   document.getElementById('smodal').classList.add('open');
 }
 function closeSettingsModal(){document.getElementById('smodal').classList.remove('open')}
 function closeSettings(e){if(e.target===e.currentTarget)closeSettingsModal()}
 function updateBirth(){
-  const v=document.getElementById('s-birth').value;
-  if(!v)return;
-  birthDate=new Date(v+'T00:00:00');
+  const dt=getDateFromSelects('sb-y','sb-m','sb-d');
+  if(!dt)return;
+  birthDate=dt;
   localStorage.setItem('bd',birthDate.toISOString());
   closeSettingsModal();
   calculate();render();
 }
 
+// ═══ DATE SELECT INIT ═══
+function initDateSelects(yId,mId,dId,onYearChange){
+  const yEl=document.getElementById(yId);
+  const mEl=document.getElementById(mId);
+  const dEl=document.getElementById(dId);
+  const curY=new Date().getFullYear();
+  // Year: 1930 ~ curY-13
+  for(let y=curY-13;y>=1930;y--){
+    const o=document.createElement('option');o.value=y;o.textContent=y+'年';yEl.appendChild(o);
+  }
+  // Month: 1~12
+  for(let m=1;m<=12;m++){
+    const o=document.createElement('option');o.value=m;o.textContent=m+'月';mEl.appendChild(o);
+  }
+  function updateDays(){
+    const y=parseInt(yEl.value)||2000,m=parseInt(mEl.value)||1;
+    const max=new Date(y,m,0).getDate();
+    const prev=parseInt(dEl.value)||0;
+    dEl.innerHTML='<option value="">日</option>';
+    for(let d=1;d<=max;d++){
+      const o=document.createElement('option');o.value=d;o.textContent=d+'日';
+      if(d===prev)o.selected=true;
+      dEl.appendChild(o);
+    }
+  }
+  yEl.addEventListener('change',updateDays);
+  mEl.addEventListener('change',updateDays);
+  updateDays();
+}
+function getDateFromSelects(yId,mId,dId){
+  const y=document.getElementById(yId).value;
+  const m=document.getElementById(mId).value;
+  const d=document.getElementById(dId).value;
+  if(!y||!m||!d)return null;
+  return new Date(parseInt(y),parseInt(m)-1,parseInt(d));
+}
+function setDateToSelects(yId,mId,dId,date){
+  document.getElementById(yId).value=date.getFullYear();
+  document.getElementById(mId).value=date.getMonth()+1;
+  // Trigger day update then set day
+  document.getElementById(mId).dispatchEvent(new Event('change'));
+  document.getElementById(dId).value=date.getDate();
+}
+
 // ═══ SETUP ═══
 function startApp(){
-  const v=document.getElementById('birth-input').value;
-  if(!v){alert('生年月日を入力してください');return}
-  birthDate=new Date(v+'T00:00:00');
-  if(isNaN(birthDate)){alert('正しい日付を入力してください');return}
+  const dt=getDateFromSelects('bd-y','bd-m','bd-d');
+  if(!dt){alert('生年月日を選択してください');return}
+  birthDate=dt;
   localStorage.setItem('bd',birthDate.toISOString());
   show('dashboard');calculate();render();
 }
@@ -731,6 +783,10 @@ function show(id){
 
 // ═══ INIT ═══
 window.addEventListener('load',()=>{
+  // Init all date selects
+  initDateSelects('bd-y','bd-m','bd-d');
+  initDateSelects('sb-y','sb-m','sb-d');
+
   const saved=localStorage.getItem('bd');
   if(saved){
     birthDate=new Date(saved);
